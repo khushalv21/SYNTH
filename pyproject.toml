@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=70.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Synth-CLI"
+version = "2.0.0"
+description = "AI Forensic Engine — multi-detector ensemble for AI-generated text and image authentication."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Khushaal", email = "khushaal@example.com" },
+]
+keywords = [
+    "ai", "authenticator", "ocr", "cli", "nlp",
+    "content-detection", "deepfake", "image-forensics",
+    "ensemble", "forensics", "vision-transformer",
+]
+
+dependencies = [
+    # ── CLI & UI ──────────────────────────────────────────
+    "typer>=0.12,<1",
+    "rich>=13,<16",
+    # ── OCR pipeline ──────────────────────────────────────
+    "easyocr>=1.7,<2",
+    "opencv-python-headless>=4.9,<5",
+    # ── PDF ingestion ─────────────────────────────────────
+    "pypdfium2>=4.25,<5",
+    # ── ML / AI detection ─────────────────────────────────
+    "torch>=2.2,<3",
+    "transformers>=4.40,<6",
+    "Pillow>=10.0",
+    # ── Networking & config ───────────────────────────────
+    "python-dotenv>=1.0,<2",
+    "httpx>=0.27,<1",
+]
+
+[project.optional-dependencies]
+# ── Detector extras ──────────────────────────────────────────────
+fast = [
+    "xgboost>=2.0",
+    "scipy>=1.12",
+    "joblib>=1.3",
+]
+vision = [
+    "scikit-image>=0.22",
+    "torchvision>=0.17",
+]
+full = [
+    "Synth-CLI[fast,vision]",
+    "open-clip-torch>=2.24",
+]
+# ── Development ──────────────────────────────────────────────────
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+]
+
+[project.scripts]
+synth = "synth.cli.main:app"
+
+[project.urls]
+Homepage = "https://github.com/khushalv21/SYNTH"
+Repository = "https://github.com/khushalv21/SYNTH"
+Issues = "https://github.com/khushalv21/SYNTH/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

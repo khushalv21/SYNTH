@@ -1,0 +1,17 @@
+{
+    "payload_template": {
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": 256,
+        "messages": [
+            {
+                "role": "user",
+                "content": "You are an AI content detector. Analyse the following text and respond with ONLY valid JSON containing: \"score\" (float 0.0=human to 1.0=AI), \"verdict\" (\"human\", \"ai\", or \"mixed\"), and \"reasoning\" (one sentence).\n\nText:\n{text}"
+            }
+        ]
+    },
+    "score_path": "content.0.text",
+    "label_path": "content.0.text",
+    "reasoning_path": "content.0.text",
+    "auth_header": "x-api-key",
+    "auth_prefix": ""
+}

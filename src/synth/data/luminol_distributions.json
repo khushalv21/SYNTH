@@ -1,0 +1,22 @@
+{
+    "diff": {
+        "mgt": {"family": "gamma", "shape": 2.5, "loc": 5.0, "scale": 15.0},
+        "hgt": {"family": "gamma", "shape": 1.8, "loc": 2.0, "scale": 8.0}
+    },
+    "ratio": {
+        "mgt": {"family": "gamma", "shape": 3.0, "loc": 1.2, "scale": 0.8},
+        "hgt": {"family": "gamma", "shape": 2.0, "loc": 1.05, "scale": 0.3}
+    },
+    "log_ratio": {
+        "mgt": {"family": "gamma", "shape": 2.5, "loc": 0.2, "scale": 0.5},
+        "hgt": {"family": "gamma", "shape": 1.5, "loc": 0.05, "scale": 0.2}
+    },
+    "pct_change": {
+        "mgt": {"family": "gamma", "shape": 2.0, "loc": 20.0, "scale": 50.0},
+        "hgt": {"family": "gamma", "shape": 1.5, "loc": 5.0, "scale": 20.0}
+    },
+    "sum": {
+        "mgt": {"family": "gamma", "shape": 3.0, "loc": 30.0, "scale": 20.0},
+        "hgt": {"family": "gamma", "shape": 4.0, "loc": 50.0, "scale": 30.0}
+    }
+}

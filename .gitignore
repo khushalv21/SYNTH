@@ -1,0 +1,123 @@
+# ──────────────────────────────────────────────
+#  Python
+# ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+sdist/
+wheels/
+*.whl
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.*
+!.env.example
+
+# ──────────────────────────────────────────────
+#  PyPI / Build artefacts
+# ──────────────────────────────────────────────
+src/*.egg-info/
+*.tar.gz
+MANIFEST
+
+# ──────────────────────────────────────────────
+#  PyTorch / ML model artefacts
+# ──────────────────────────────────────────────
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+*.ckpt
+checkpoints/
+runs/
+wandb/
+mlruns/
+lightning_logs/
+
+# XGBoost model files (DivEye classifier)
+*.ubj
+*.model
+*.xgb
+
+# Synth detector weight cache
+#   Default: ~/.cache/synth/weights/
+#   Guard against local overrides via SYNTH_CACHE_DIR
+.synth_cache/
+synth_weights/
+
+# EasyOCR model cache (default download location)
+~/.EasyOCR/
+.EasyOCR/
+
+# HuggingFace model cache
+#   Default: ~/.cache/huggingface/  (outside project)
+#   Guard against local overrides via HF_HOME or TRANSFORMERS_CACHE
+*.cache/
+huggingface/
+hub/
+models--*/
+
+# ──────────────────────────────────────────────
+#  Testing & Coverage
+# ──────────────────────────────────────────────
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.nox/
+.tox/
+
+# ──────────────────────────────────────────────
+#  Type checking & Linting
+# ──────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# ──────────────────────────────────────────────
+#  macOS
+# ──────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# ──────────────────────────────────────────────
+#  IDEs & Editors
+# ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# ──────────────────────────────────────────────
+#  Misc
+# ──────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+.envrc

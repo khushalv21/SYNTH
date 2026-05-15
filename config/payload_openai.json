@@ -1,0 +1,19 @@
+{
+    "payload_template": {
+        "model": "gpt-4o",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an AI content detector. Analyse the following text and respond with valid JSON containing: \"score\" (float 0.0=human to 1.0=AI), \"verdict\" (\"human\", \"ai\", or \"mixed\"), and \"reasoning\" (one sentence)."
+            },
+            {
+                "role": "user",
+                "content": "{text}"
+            }
+        ],
+        "response_format": { "type": "json_object" }
+    },
+    "score_path": "choices.0.message.content",
+    "label_path": "choices.0.message.content",
+    "reasoning_path": "choices.0.message.content"
+}
