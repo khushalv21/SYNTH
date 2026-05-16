@@ -51,6 +51,10 @@
 
 ## Installation
 
+> **Requirements:** Python 3.10+ and `pip` (or `pip3`). Synth auto-detects your hardware — CUDA, Apple MPS, or CPU — no manual config needed.
+
+### Quick install (all platforms)
+
 ```bash
 pip install git+https://github.com/khushalv21/SYNTH.git
 ```
@@ -72,7 +76,27 @@ synth models     # List all registered detectors
 
 > **Note**: On first run, HuggingFace models download and cache automatically (~500 MB text, ~350 MB image, ~400 MB CO-SPY).
 
-### Development install
+---
+
+### 🍎 macOS
+
+**Prerequisites:** Xcode Command Line Tools (provides `git` and system compilers).
+
+```bash
+xcode-select --install          # If not already installed
+```
+
+**Install Synth:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install git+https://github.com/khushalv21/SYNTH.git
+```
+
+**GPU acceleration:** Apple Silicon (M1/M2/M3/M4) is detected automatically via MPS — no additional setup required. Intel Macs run on CPU.
+
+**Development install:**
 
 ```bash
 git clone https://github.com/khushalv21/SYNTH.git
@@ -81,6 +105,150 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ```
+
+---
+
+### 🐧 Linux
+
+<details>
+<summary><strong>Ubuntu / Debian</strong></summary>
+
+**Install system dependencies:**
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv git \
+    libgl1 libglib2.0-0 libsm6 libxext6 libxrender1
+```
+
+> The `libgl1` and `libglib2.0-0` packages are required by OpenCV (used in the OCR pipeline).
+
+**Install Synth:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install git+https://github.com/khushalv21/SYNTH.git
+```
+
+**Development install:**
+
+```bash
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+</details>
+
+<details>
+<summary><strong>Fedora / RHEL / CentOS</strong></summary>
+
+**Install system dependencies:**
+
+```bash
+sudo dnf install -y python3 python3-pip git \
+    mesa-libGL glib2 libSM libXext libXrender
+```
+
+**Install Synth:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install git+https://github.com/khushalv21/SYNTH.git
+```
+
+</details>
+
+<details>
+<summary><strong>Arch Linux</strong></summary>
+
+**Install system dependencies:**
+
+```bash
+sudo pacman -S python python-pip git mesa glib2
+```
+
+**Install Synth:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install git+https://github.com/khushalv21/SYNTH.git
+```
+
+</details>
+
+**GPU acceleration (NVIDIA CUDA):**
+
+If you have an NVIDIA GPU and want accelerated inference:
+
+```bash
+# Install PyTorch with CUDA support (replace cu124 with your CUDA version)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# Then install Synth
+pip install git+https://github.com/khushalv21/SYNTH.git
+```
+
+Verify GPU detection:
+
+```bash
+synth          # Dashboard shows "Device: cuda" if detected
+```
+
+> **Tip:** Run `nvidia-smi` to check your CUDA version and ensure drivers are installed.
+
+---
+
+### 🪟 Windows
+
+**Prerequisites:**
+
+1. **Python 3.10+** — Download from [python.org](https://www.python.org/downloads/). During installation, check **"Add python.exe to PATH"**.
+2. **Git** — Download from [git-scm.com](https://git-scm.com/download/win) or install via `winget install Git.Git`.
+
+**Install Synth (Command Prompt or PowerShell):**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install git+https://github.com/khushalv21/SYNTH.git
+```
+
+> **Note:** On Windows, use `.venv\Scripts\activate` instead of `source .venv/bin/activate`.
+
+**Install with extras:**
+
+```powershell
+pip install "synth-cli[full] @ git+https://github.com/khushalv21/SYNTH.git"
+```
+
+**GPU acceleration (NVIDIA CUDA):**
+
+```powershell
+# Install PyTorch with CUDA support first
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# Then install Synth
+pip install git+https://github.com/khushalv21/SYNTH.git
+```
+
+**Development install:**
+
+```powershell
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+> **Troubleshooting (Windows):**
+> - If `synth` is not recognized after install, ensure your venv is activated or add Python's `Scripts` directory to your `PATH`.
+> - For `pip install` SSL errors behind a corporate proxy, use `pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ...`.
+> - If you encounter C++ build errors installing dependencies, install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
 
 ---
 
