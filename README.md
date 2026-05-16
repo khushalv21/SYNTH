@@ -45,26 +45,28 @@
 - 🍎 **Hardware Agnostic** — Auto-detects CUDA, MPS (Apple Silicon), or CPU; VRAM-aware loading
 - 📁 **Batch Processing** — Scan entire directories with per-file ensemble reports
 - 🎨 **Rich TUI** — Per-detector vote tables, agreement ratios, colour-coded consensus verdicts
-- 📦 **One-Line Install** — `pip install Synth-CLI`
+- 📦 **Simple Setup** — Clone, install, detect — three commands
 
 ---
 
 ## Installation
 
-> **Requirements:** Python 3.10+ and `pip` (or `pip3`). Synth auto-detects your hardware — CUDA, Apple MPS, or CPU — no manual config needed.
+> **Requirements:** Python 3.10+ and `git`. Synth auto-detects your hardware — CUDA, Apple MPS, or CPU — no manual config needed.
 
 ### Quick install (all platforms)
 
 ```bash
-pip install git+https://github.com/khushalv21/SYNTH.git
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
+pip install .
 ```
 
 ### Optional extras
 
 ```bash
-pip install "synth-cli[fast] @ git+https://github.com/khushalv21/SYNTH.git"    # + XGBoost, SciPy (DivEye)
-pip install "synth-cli[vision] @ git+https://github.com/khushalv21/SYNTH.git"  # + torchvision (CO-SPY)
-pip install "synth-cli[full] @ git+https://github.com/khushalv21/SYNTH.git"    # Everything
+pip install ".[fast]"      # + XGBoost, SciPy (DivEye)
+pip install ".[vision]"    # + torchvision (CO-SPY)
+pip install ".[full]"      # Everything
 ```
 
 ### Verify installation
@@ -89,9 +91,11 @@ xcode-select --install          # If not already installed
 **Install Synth:**
 
 ```bash
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
 python3 -m venv .venv
 source .venv/bin/activate
-pip install git+https://github.com/khushalv21/SYNTH.git
+pip install .
 ```
 
 **GPU acceleration:** Apple Silicon (M1/M2/M3/M4) is detected automatically via MPS — no additional setup required. Intel Macs run on CPU.
@@ -126,9 +130,11 @@ sudo apt install -y python3 python3-pip python3-venv git \
 **Install Synth:**
 
 ```bash
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
 python3 -m venv .venv
 source .venv/bin/activate
-pip install git+https://github.com/khushalv21/SYNTH.git
+pip install .
 ```
 
 **Development install:**
@@ -156,9 +162,11 @@ sudo dnf install -y python3 python3-pip git \
 **Install Synth:**
 
 ```bash
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
 python3 -m venv .venv
 source .venv/bin/activate
-pip install git+https://github.com/khushalv21/SYNTH.git
+pip install .
 ```
 
 </details>
@@ -175,9 +183,11 @@ sudo pacman -S python python-pip git mesa glib2
 **Install Synth:**
 
 ```bash
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
 python3 -m venv .venv
 source .venv/bin/activate
-pip install git+https://github.com/khushalv21/SYNTH.git
+pip install .
 ```
 
 </details>
@@ -190,7 +200,7 @@ If you have an NVIDIA GPU and want accelerated inference:
 # Install PyTorch with CUDA support (replace cu124 with your CUDA version)
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 # Then install Synth
-pip install git+https://github.com/khushalv21/SYNTH.git
+git clone https://github.com/khushalv21/SYNTH.git && cd SYNTH && pip install .
 ```
 
 Verify GPU detection:
@@ -213,9 +223,11 @@ synth          # Dashboard shows "Device: cuda" if detected
 **Install Synth (Command Prompt or PowerShell):**
 
 ```powershell
+git clone https://github.com/khushalv21/SYNTH.git
+cd SYNTH
 python -m venv .venv
 .venv\Scripts\activate
-pip install git+https://github.com/khushalv21/SYNTH.git
+pip install .
 ```
 
 > **Note:** On Windows, use `.venv\Scripts\activate` instead of `source .venv/bin/activate`.
@@ -223,7 +235,7 @@ pip install git+https://github.com/khushalv21/SYNTH.git
 **Install with extras:**
 
 ```powershell
-pip install "synth-cli[full] @ git+https://github.com/khushalv21/SYNTH.git"
+pip install ".[full]"
 ```
 
 **GPU acceleration (NVIDIA CUDA):**
@@ -232,7 +244,7 @@ pip install "synth-cli[full] @ git+https://github.com/khushalv21/SYNTH.git"
 # Install PyTorch with CUDA support first
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 # Then install Synth
-pip install git+https://github.com/khushalv21/SYNTH.git
+git clone https://github.com/khushalv21/SYNTH.git; cd SYNTH; pip install .
 ```
 
 **Development install:**
@@ -247,7 +259,7 @@ pip install -e ".[dev]"
 
 > **Troubleshooting (Windows):**
 > - If `synth` is not recognized after install, ensure your venv is activated or add Python's `Scripts` directory to your `PATH`.
-> - For `pip install` SSL errors behind a corporate proxy, use `pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ...`.
+> - For SSL errors behind a corporate proxy, configure your proxy settings or use `pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org .` when installing dependencies.
 > - If you encounter C++ build errors installing dependencies, install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
 
 ---
