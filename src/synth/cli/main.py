@@ -28,6 +28,8 @@ import contextlib
 import io
 import logging
 import sys
+import threading
+import time
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -413,6 +415,187 @@ def _process_single_file(
 # ── Unified auto-detect pipeline ──────────────────────────────────────────────
 
 
+def _is_first_run(lang_list: list[str]) -> bool:
+    """Detect whether this is the first run by checking model caches.
+
+    Returns True if EasyOCR language data or the HuggingFace model
+    has not been downloaded yet.
+    """
+    # Check EasyOCR model cache
+    easyocr_cache = Path.home() / ".EasyOCR" / "model"
+    has_easyocr = easyocr_cache.exists() and any(easyocr_cache.iterdir()) if easyocr_cache.exists() else False
+
+    # Check HuggingFace model cache (roberta-base-openai-detector)
+    hf_cache = Path.home() / ".cache" / "huggingface" / "hub"
+    has_hf = hf_cache.exists() and any(hf_cache.iterdir()) if hf_cache.exists() else False
+
+    return not (has_easyocr and has_hf)
+
+
+def _premium_first_run_init(
+    lang_list: list[str],
+    verbose: bool,
+) -> "DocumentScanner":
+    """Premium first-run installation experience.
+
+    Shows a single, unified progress bar with phased steps instead of
+    dumping raw download output from EasyOCR and HuggingFace.
+    """
+    from rich.console import Group
+    from rich.panel import Panel
+    from rich.text import Text
+
+    # ── Premium welcome header ────────────────────────────────────────
+    console.print()
+    welcome_text = Text()
+    welcome_text.append("  ◆ ", style="bold cyan")
+    welcome_text.append("First-time setup", style="bold white")
+    welcome_text.append(" — ", style="dim")
+    welcome_text.append("downloading AI models", style="dim italic")
+
+    console.print(
+        Panel(
+            Group(
+                welcome_text,
+                Text("  This only happens once. Models are cached locally for future runs.", style="dim"),
+            ),
+            border_style="cyan",
+            padding=(0, 1),
+        )
+    )
+    console.print()
+
+    # ── Phased progress bar ───────────────────────────────────────────
+    phases = [
+        ("Preparing environment",        5),
+        ("Downloading OCR engine",      35),
+        ("Loading language models",     25),
+        ("Initialising AI pipeline",    20),
+        ("Optimising for your device",  15),
+    ]
+    total_weight = sum(w for _, w in phases)
+
+    progress = Progress(
+        SpinnerColumn(style="cyan", spinner_name="dots12"),
+        TextColumn("[bold]{task.description}[/bold]"),
+        BarColumn(
+            bar_width=50,
+            style="dim white",
+            complete_style="bold cyan",
+            finished_style="bold green",
+            pulse_style="cyan",
+        ),
+        TaskProgressColumn(
+            text_format="[bold]{task.percentage:>3.0f}%[/bold]",
+        ),
+        TimeElapsedColumn(),
+        console=console,
+        transient=False,
+    )
+
+    scanner = None
+    error = None
+
+    with progress:
+        task = progress.add_task(phases[0][0], total=total_weight)
+
+        # Phase 1: Preparing environment
+        progress.update(task, description=f"[cyan]›[/cyan] {phases[0][0]}")
+        time.sleep(0.3)
+        progress.advance(task, phases[0][1])
+
+        # Phase 2–4: The actual heavy work — load OCR engine
+        # (EasyOCR downloads ~100MB of models on first run)
+        progress.update(task, description=f"[cyan]›[/cyan] {phases[1][0]}")
+
+        def _load_scanner() -> None:
+            nonlocal scanner, error
+            try:
+                if verbose:
+                    scanner = DocumentScanner(languages=lang_list)
+                else:
+                    with contextlib.redirect_stdout(io.StringIO()), \
+                         contextlib.redirect_stderr(io.StringIO()):
+                        scanner = DocumentScanner(languages=lang_list)
+            except Exception as exc:
+                error = exc
+
+        loader_thread = threading.Thread(target=_load_scanner, daemon=True)
+        loader_thread.start()
+
+        # Animate progress while the actual download/load happens
+        phase_weights = [phases[1][1], phases[2][1], phases[3][1]]
+        phase_labels = [phases[1][0], phases[2][0], phases[3][0]]
+        combined_weight = sum(phase_weights)
+        elapsed_weight = 0.0
+
+        while loader_thread.is_alive():
+            time.sleep(0.15)
+            # Advance smoothly but cap at 95% of combined weight
+            if elapsed_weight < combined_weight * 0.95:
+                increment = min(0.8, combined_weight * 0.95 - elapsed_weight)
+                progress.advance(task, increment)
+                elapsed_weight += increment
+
+                # Update phase label based on progress
+                ratio = elapsed_weight / combined_weight
+                if ratio < 0.40:
+                    progress.update(task, description=f"[cyan]›[/cyan] {phase_labels[0]}")
+                elif ratio < 0.75:
+                    progress.update(task, description=f"[cyan]›[/cyan] {phase_labels[1]}")
+                else:
+                    progress.update(task, description=f"[cyan]›[/cyan] {phase_labels[2]}")
+
+        loader_thread.join()
+
+        # Fill remaining weight for phases 2–4
+        remaining = combined_weight - elapsed_weight
+        if remaining > 0:
+            progress.advance(task, remaining)
+
+        # Phase 5: Optimising
+        progress.update(task, description=f"[cyan]›[/cyan] {phases[4][0]}")
+        time.sleep(0.2)
+        progress.advance(task, phases[4][1])
+
+        # Final state
+        progress.update(task, description="[bold green]✓[/bold green] [bold]Setup complete[/bold]")
+
+    if error is not None:
+        console.print(
+            f"\n[bold red]✗[/bold red] Failed to load OCR engine: {error}"
+        )
+        raise typer.Exit(code=1)
+
+    console.print()
+    return scanner  # type: ignore[return-value]
+
+
+def _quick_init(
+    lang_list: list[str],
+    verbose: bool,
+) -> "DocumentScanner":
+    """Fast model initialisation for subsequent runs (models already cached)."""
+    with Status(
+        "[bold cyan]Initialising models…[/bold cyan]",
+        spinner="dots",
+        console=console,
+    ):
+        try:
+            if verbose:
+                scanner = DocumentScanner(languages=lang_list)
+            else:
+                with contextlib.redirect_stdout(io.StringIO()), \
+                     contextlib.redirect_stderr(io.StringIO()):
+                    scanner = DocumentScanner(languages=lang_list)
+        except Exception as exc:
+            console.print(
+                f"[bold red]✗[/bold red] Failed to load OCR engine: {exc}"
+            )
+            raise typer.Exit(code=1)
+    return scanner
+
+
 def _run_auto(
     path: Path,
     engine: EngineChoice,
@@ -429,26 +612,12 @@ def _run_auto(
     # ── Initialise OCR engine (needed for both probe and text mode) ───────
     lang_list = [lang.strip() for lang in languages.split(",")]
 
-    with Status(
-        "[bold cyan]Initialising models…[/bold cyan]",
-        spinner="dots",
-        console=console,
-    ) as status:
-        status.update("[bold cyan]Loading OCR engine…[/bold cyan]")
-        try:
-            # Suppress EasyOCR's raw print() statements during init/download
-            # (they bypass the logging system). Only suppress in quiet mode.
-            if verbose:
-                scanner = DocumentScanner(languages=lang_list)
-            else:
-                with contextlib.redirect_stdout(io.StringIO()), \
-                     contextlib.redirect_stderr(io.StringIO()):
-                    scanner = DocumentScanner(languages=lang_list)
-        except Exception as exc:
-            console.print(
-                f"[bold red]✗[/bold red] Failed to load OCR engine: {exc}"
-            )
-            raise typer.Exit(code=1)
+    first_run = _is_first_run(lang_list)
+
+    if first_run:
+        scanner = _premium_first_run_init(lang_list, verbose)
+    else:
+        scanner = _quick_init(lang_list, verbose)
 
     # ── Auto-detect mode for image files ──────────────────────────────────
     #
