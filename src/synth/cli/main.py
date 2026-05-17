@@ -201,6 +201,10 @@ def main(
     else:
         silence_libraries()
 
+    # ── Background update check (non-blocking) ───────────────────────────
+    from synth.core.update_check import start_update_check
+    start_update_check()
+
     # ── No argument → show dashboard ──────────────────────────────────────
     if path is None:
         _show_dashboard()
@@ -262,6 +266,10 @@ def main(
 
     # ── Auto-detect and analyse ───────────────────────────────────────────
     _run_auto(target, engine, agent, show_text, languages, verbose, profile)
+
+    # ── Show update warning if available ──────────────────────────────────
+    from synth.core.update_check import print_update_warning
+    print_update_warning()
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -566,6 +574,9 @@ def _premium_first_run_init(
             f"\n[bold red]✗[/bold red] Failed to load OCR engine: {error}"
         )
         raise typer.Exit(code=1)
+    # Record current SHA so the update checker has a baseline
+    from synth.core.update_check import mark_installed
+    threading.Thread(target=mark_installed, daemon=True).start()
 
     console.print()
     return scanner  # type: ignore[return-value]
