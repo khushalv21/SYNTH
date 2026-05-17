@@ -79,16 +79,17 @@ def _verdict_short(verdict: str) -> str:
 
 
 def _confidence_label(score: float) -> str:
-    """Convert a raw 0.0–1.0 score into a human-readable confidence level."""
+    """Convert a raw 0.0–1.0 score into a human-readable confidence level with percentage."""
+    pct = f"{score * 100:.0f}%"
     if score >= 0.90:
-        return "[bold red]Very High[/bold red]"
+        return f"[bold red]{pct} · Very High[/bold red]"
     if score >= 0.75:
-        return "[red]High[/red]"
+        return f"[red]{pct} · High[/red]"
     if score >= 0.50:
-        return "[yellow]Moderate[/yellow]"
+        return f"[yellow]{pct} · Moderate[/yellow]"
     if score >= 0.30:
-        return "[yellow]Low[/yellow]"
-    return "[green]Very Low[/green]"
+        return f"[yellow]{pct} · Low[/yellow]"
+    return f"[green]{pct} · Very Low[/green]"
 
 
 def _score_styled(score: float) -> str:
