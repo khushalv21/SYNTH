@@ -30,6 +30,8 @@ except ImportError:
     pass
 
 _os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+_os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
+_os.environ.setdefault("HF_HUB_VERBOSITY", "error")
 _os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 _os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
 _os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
