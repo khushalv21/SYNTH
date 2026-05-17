@@ -229,16 +229,34 @@ class LocalHFAuthenticator(BaseAuthenticator):
         raw: dict[str, float],
     ) -> str:
         pct = score * 100
-        raw_str = ", ".join(f"{k}={v:.3f}" for k, v in raw.items())
+        if verdict == "ai":
+            return (
+                f"Our scanner is {_confidence_word(pct)} confident ({pct:.0f}%) "
+                f"this text was written by AI, not a person."
+            )
+        if verdict == "mixed":
+            return (
+                f"This text might be partly AI-generated ({pct:.0f}% confidence). "
+                f"It could be a mix of human and AI writing."
+            )
         return (
-            f"AI probability: {pct:.1f}%. "
-            f"Verdict: {verdict}. "
-            f"Raw model scores: [{raw_str}]"
+            f"This text looks like it was written by a person ({pct:.0f}% AI probability — low)."
         )
 
     @property
     def name(self) -> str:
         return f"local:{self._model_name}"
+
+
+def _confidence_word(pct: float) -> str:
+    """Return a plain-English confidence word for a percentage."""
+    if pct >= 90:
+        return "very"
+    if pct >= 75:
+        return "fairly"
+    if pct >= 50:
+        return "somewhat"
+    return "not very"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -696,11 +714,12 @@ class VisionAuthenticator:
         ai_prob: float, verdict: str, raw: dict[str, float]
     ) -> str:
         pct = ai_prob * 100
-        raw_str = ", ".join(f"{k}={v:.3f}" for k, v in raw.items())
+        if verdict == "fake":
+            return (
+                f"This image has strong signs of being AI-generated ({pct:.0f}% confidence)."
+            )
         return (
-            f"AI image probability: {pct:.1f}%. "
-            f"Verdict: {verdict}. "
-            f"Raw model scores: [{raw_str}]"
+            f"This image looks like a real photo ({pct:.0f}% AI probability — low)."
         )
 
     # ── Core detection — from PIL image ───────────────────────────────────

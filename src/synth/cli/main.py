@@ -261,9 +261,9 @@ def main(
             path = ctx.args[0]
         else:
             console.print(
-                "[bold red]✗[/bold red] Missing file path.\n"
-                "  Usage: [cyan]synth <file>[/cyan]\n"
-                "  Run [cyan]synth help[/cyan] for more info."
+                "[bold red]😕[/bold red] You need to tell me which file to check.\n"
+                "  Try: [cyan]synth photo.png[/cyan]\n"
+                "  Type [cyan]synth help[/cyan] for more info."
             )
             raise typer.Exit(code=1)
 
@@ -272,7 +272,8 @@ def main(
 
     if not target.exists():
         console.print(
-            f"[bold red]✗[/bold red] Path not found: [yellow]{target}[/yellow]"
+            f"[bold red]😕[/bold red] Can't find that file: [yellow]{target.name}[/yellow]\n"
+            f"   Check the file name and try again."
         )
         raise typer.Exit(code=1)
 
@@ -313,9 +314,8 @@ def _collect_input_files(target: Path) -> tuple[list[Path], list[Path]]:
         if suffix in IMAGE_EXTENSIONS:
             return [target], []
         console.print(
-            f"[bold red]✗[/bold red] Unsupported file type: "
-            f"[yellow]{target.suffix}[/yellow]. "
-            f"Supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
+            f"[bold red]😕[/bold red] Synth can't read [yellow]{target.suffix}[/yellow] files.\n"
+            f"   Try an image (PNG, JPG) or a PDF."
         )
         raise typer.Exit(code=1)
 
@@ -332,8 +332,8 @@ def _collect_input_files(target: Path) -> tuple[list[Path], list[Path]]:
         )
         if not images and not pdfs:
             console.print(
-                f"[bold red]✗[/bold red] No supported files found in "
-                f"[yellow]{target}[/yellow]"
+                f"[bold red]😕[/bold red] No images or PDFs found in that folder.\n"
+                f"   Folder: [yellow]{target.name}/[/yellow]"
             )
             raise typer.Exit(code=1)
         return images, pdfs
@@ -341,7 +341,7 @@ def _collect_input_files(target: Path) -> tuple[list[Path], list[Path]]:
     # Defensive fallback — should be unreachable since path.exists()
     # is checked in main(), but kept for robustness.
     console.print(
-        f"[bold red]✗[/bold red] Path not found: [yellow]{target}[/yellow]"
+        f"[bold red]😕[/bold red] Can't find: [yellow]{target}[/yellow]"
     )
     raise typer.Exit(code=1)
 
@@ -358,7 +358,7 @@ def _extract_pdf_pages(
         page_images = pdf_to_images(pdf_path)
     except PDFLoadError as exc:
         console.print(
-            f"  [bold red]✗[/bold red] Failed to load PDF: {exc}"
+            f"  [bold red]😕[/bold red] Couldn't read this PDF: {exc}"
         )
         return []
 
@@ -379,12 +379,12 @@ def _process_pdf_page(
         text = scanner.extract_text_from_array(page_array, label=label)
     except NoTextFoundError:
         console.print(
-            f"  [dim yellow]⚠ {label}:[/dim yellow] No readable text found — skipped"
+            f"  [dim yellow]⚠️  {label}:[/dim yellow] No readable text found — skipped"
         )
         return None
     except Exception as exc:
         console.print(
-            f"  [dim red]✗ {label}:[/dim red] OCR failed — {exc}"
+            f"  [dim red]😕 {label}:[/dim red] Couldn't read the text — {exc}"
         )
         return None
 
@@ -392,7 +392,7 @@ def _process_pdf_page(
         result = detector.detect(text)  # type: ignore[union-attr]
     except SynthError as exc:
         console.print(
-            f"  [dim red]✗ {label}:[/dim red] Detection failed — {exc}"
+            f"  [dim red]😕 {label}:[/dim red] Scan failed — {exc}"
         )
         return None
 
@@ -412,12 +412,12 @@ def _process_single_file(
         text = scanner.extract_text(image_path)
     except NoTextFoundError:
         console.print(
-            f"  [dim yellow]⚠ {filename}:[/dim yellow] No readable text found — skipped"
+            f"  [dim yellow]⚠️  {filename}:[/dim yellow] No readable text found — skipped"
         )
         return None
     except Exception as exc:
         console.print(
-            f"  [dim red]✗ {filename}:[/dim red] OCR failed — {exc}"
+            f"  [dim red]😕 {filename}:[/dim red] Couldn't read the text — {exc}"
         )
         return None
 
@@ -425,7 +425,7 @@ def _process_single_file(
         result = detector.detect(text)  # type: ignore[union-attr]
     except SynthError as exc:
         console.print(
-            f"  [dim red]✗ {filename}:[/dim red] Detection failed — {exc}"
+            f"  [dim red]😕 {filename}:[/dim red] Scan failed — {exc}"
         )
         return None
 
@@ -579,11 +579,12 @@ def _premium_first_run_init(
         progress.advance(task, phases[4][1])
 
         # Final state
-        progress.update(task, description="[bold green]✓[/bold green] [bold]Setup complete[/bold]")
+        progress.update(task, description="[bold green]✅[/bold green] [bold]All set![/bold]")
 
     if error is not None:
         console.print(
-            f"\n[bold red]✗[/bold red] Failed to load OCR engine: {error}"
+            f"\n[bold red]😕[/bold red] Something went wrong during setup. Please try running again.\n"
+            f"   [dim]Error: {error}[/dim]"
         )
         raise typer.Exit(code=1)
     # Record current SHA so the update checker has a baseline
@@ -600,7 +601,7 @@ def _quick_init(
 ) -> "DocumentScanner":
     """Fast model initialisation for subsequent runs (models already cached)."""
     with Status(
-        "[bold cyan]Initialising models…[/bold cyan]",
+        "[bold cyan]Getting ready…[/bold cyan]",
         spinner="dots",
         console=console,
     ):
@@ -613,7 +614,8 @@ def _quick_init(
                     scanner = DocumentScanner(languages=lang_list)
         except Exception as exc:
             console.print(
-                f"[bold red]✗[/bold red] Failed to load OCR engine: {exc}"
+                f"[bold red]😕[/bold red] Something went wrong loading the scanner. Try again.\n"
+                f"   [dim]Error: {exc}[/dim]"
             )
             raise typer.Exit(code=1)
     return scanner
@@ -656,7 +658,7 @@ def _run_auto(
 
     if image_files:
         with Status(
-            "[bold cyan]Detecting analysis mode…[/bold cyan]",
+            "[bold cyan]Figuring out the best way to check this…[/bold cyan]",
             spinner="dots",
             console=console,
         ):
@@ -707,7 +709,7 @@ def _run_auto(
     total_results = len(text_results) + len(vision_results)
     if total_results == 0:
         console.print(
-            "[bold red]✗[/bold red] No files could be processed successfully."
+            "[bold red]😕[/bold red] Couldn't scan any of the files. Try a different file."
         )
         raise typer.Exit(code=1)
 
@@ -716,7 +718,7 @@ def _run_auto(
 
     if text_results:
         if has_both:
-            console.print("[bold]\n📝 Text Analysis Results[/bold]\n")
+            console.print("[bold]\n📝 Text Scan Results[/bold]\n")
         table = build_results_table(text_results)
         console.print(table)
         console.print()
@@ -736,7 +738,7 @@ def _run_auto(
 
     if vision_results:
         if has_both:
-            console.print("[bold]\n🔍 Image Forensics Results[/bold]\n")
+            console.print("[bold]\n🖼️  Image Scan Results[/bold]\n")
         table = build_vision_results_table(vision_results)
         console.print(table)
         console.print()
@@ -776,9 +778,10 @@ def _run_ensemble_mode(
 
     _register_legacy_detectors()
 
+    profile_labels = {"fast": "Quick", "balanced": "Standard", "forensic": "Thorough"}
     console.print(
-        f"\n[bold cyan]⚡ Ensemble mode[/bold cyan] · "
-        f"profile=[bold]{profile}[/bold]\n"
+        f"\n[bold cyan]⚡ Deep scan[/bold cyan] · "
+        f"mode: [bold]{profile_labels.get(profile, profile)}[/bold]\n"
     )
 
     mgr = MultiDetectorManager(profile=profile)
@@ -798,7 +801,7 @@ def _run_ensemble_mode(
                     continue
 
                 with Status(
-                    f"[bold cyan]Analysing text: {img_path.name}…[/bold cyan]",
+                    f"[bold cyan]Checking text in {img_path.name}…[/bold cyan]",
                     spinner="dots",
                     console=console,
                 ):
@@ -814,7 +817,7 @@ def _run_ensemble_mode(
 
             except Exception as exc:
                 console.print(
-                    f"[bold red]✗[/bold red] Failed: {img_path.name}: {exc}"
+                    f"[bold red]😕[/bold red] Couldn't check {img_path.name}: {exc}"
                 )
 
         # Extract text from PDFs
@@ -832,7 +835,7 @@ def _run_ensemble_mode(
                     continue
 
                 with Status(
-                    f"[bold cyan]Analysing text: {pdf_path.name}…[/bold cyan]",
+                    f"[bold cyan]Checking text in {pdf_path.name}…[/bold cyan]",
                     spinner="dots",
                     console=console,
                 ):
@@ -848,7 +851,7 @@ def _run_ensemble_mode(
 
             except Exception as exc:
                 console.print(
-                    f"[bold red]✗[/bold red] Failed: {pdf_path.name}: {exc}"
+                    f"[bold red]😕[/bold red] Couldn't check {pdf_path.name}: {exc}"
                 )
 
     # ── Image forensics ───────────────────────────────────────────────────
@@ -856,7 +859,7 @@ def _run_ensemble_mode(
         for img_path in vision_images:
             try:
                 with Status(
-                    f"[bold cyan]Analysing image: {img_path.name}…[/bold cyan]",
+                    f"[bold cyan]Checking image {img_path.name}…[/bold cyan]",
                     spinner="dots",
                     console=console,
                 ):
@@ -872,7 +875,7 @@ def _run_ensemble_mode(
 
             except Exception as exc:
                 console.print(
-                    f"[bold red]✗[/bold red] Failed: {img_path.name}: {exc}"
+                    f"[bold red]😕[/bold red] Couldn't check {img_path.name}: {exc}"
                 )
 
     # ── Cleanup ───────────────────────────────────────────────────────────
@@ -914,15 +917,14 @@ def _run_text_pipeline(
             transient=False,
         ) as progress:
             task = progress.add_task(
-                "Extracting PDF pages…", total=len(pdf_files)
+                "Reading PDF pages…", total=len(pdf_files)
             )
 
             for pdf_path_item in pdf_files:
                 progress.update(
                     task,
                     description=(
-                        f"Extracting PDF pages… "
-                        f"[cyan]{pdf_path_item.name}[/cyan]"
+                        f"Reading [cyan]{pdf_path_item.name}[/cyan]…"
                     ),
                 )
                 pages = _extract_pdf_pages(pdf_path_item)
@@ -931,9 +933,9 @@ def _run_text_pipeline(
 
         if pdf_pages:
             console.print(
-                f"[bold green]✓[/bold green] Extracted "
-                f"[cyan]{len(pdf_pages)}[/cyan] page(s) from "
-                f"{len(pdf_files)} PDF(s)\n"
+                f"[bold green]✅[/bold green] Read "
+                f"[cyan]{len(pdf_pages)}[/cyan] page{'s' if len(pdf_pages) != 1 else ''} from "
+                f"{len(pdf_files)} PDF{'s' if len(pdf_files) != 1 else ''}\n"
             )
 
     # ── Load detection model ──────────────────────────────────────────────
@@ -943,13 +945,13 @@ def _run_text_pipeline(
             detector_kwargs["model_name"] = agent
 
     with Status(
-        "[bold cyan]Loading detection model…[/bold cyan]",
+        "[bold cyan]Preparing text scanner…[/bold cyan]",
         spinner="dots",
         console=console,
     ):
         detector = DetectorFactory.create(engine.value, **detector_kwargs)
 
-    console.print("[bold green]✓[/bold green] Models loaded\n")
+    console.print("[bold green]✅[/bold green] Ready to scan!\n")
 
     # ── Process files ─────────────────────────────────────────────────────
     results: list[tuple[str, AuthResult]] = []
@@ -968,12 +970,12 @@ def _run_text_pipeline(
             console=console,
             transient=False,
         ) as progress:
-            task = progress.add_task("Scanning files…", total=total_work_items)
+            task = progress.add_task("Checking files…", total=total_work_items)
 
             for image_path in image_files:
                 progress.update(
                     task,
-                    description=f"Processing [cyan]{image_path.name}[/cyan]",
+                    description=f"Checking [cyan]{image_path.name}[/cyan]",
                 )
 
                 outcome = _process_single_file(
@@ -990,7 +992,7 @@ def _run_text_pipeline(
             for label, page_array in pdf_pages:
                 progress.update(
                     task,
-                    description=f"Processing [cyan]{label}[/cyan]",
+                    description=f"Checking [cyan]{label}[/cyan]",
                 )
 
                 outcome = _process_pdf_page(
@@ -1011,7 +1013,7 @@ def _run_text_pipeline(
         if image_files:
             image_path = image_files[0]
             with Status(
-                f"[bold cyan]Analysing [white]{image_path.name}[/white]…[/bold cyan]",
+                f"[bold cyan]Checking [white]{image_path.name}[/white]…[/bold cyan]",
                 spinner="dots",
                 console=console,
             ):
@@ -1027,7 +1029,7 @@ def _run_text_pipeline(
         elif pdf_pages:
             label, page_array = pdf_pages[0]
             with Status(
-                f"[bold cyan]Analysing [white]{label}[/white]…[/bold cyan]",
+                f"[bold cyan]Checking [white]{label}[/white]…[/bold cyan]",
                 spinner="dots",
                 console=console,
             ):
@@ -1060,16 +1062,13 @@ def _run_vision_pipeline(
         vision_kwargs["model_name"] = agent
 
     with Status(
-        "[bold cyan]Loading vision model…[/bold cyan]",
+        "[bold cyan]Preparing image scanner…[/bold cyan]",
         spinner="dots",
         console=console,
     ):
         vision = VisionAuthenticator(**vision_kwargs)
 
-    console.print(
-        f"[bold green]✓[/bold green] Vision model loaded "
-        f"([cyan]{vision.name}[/cyan])\n"
-    )
+    console.print("[bold green]✅[/bold green] Image scanner ready!\n")
 
     results: list[tuple[str, VisionAuthResult]] = []
     is_batch = len(image_files) > 1
@@ -1085,13 +1084,13 @@ def _run_vision_pipeline(
             transient=False,
         ) as progress:
             task = progress.add_task(
-                "Analysing images…", total=len(image_files)
+                "Checking images…", total=len(image_files)
             )
 
             for img_path in image_files:
                 progress.update(
                     task,
-                    description=f"Analysing [cyan]{img_path.name}[/cyan]",
+                    description=f"Checking [cyan]{img_path.name}[/cyan]",
                 )
 
                 try:
@@ -1099,7 +1098,7 @@ def _run_vision_pipeline(
                     results.append((img_path.name, result))
                 except Exception as exc:
                     console.print(
-                        f"  [dim red]✗ {img_path.name}:[/dim red] {exc}"
+                        f"  [dim red]😕 {img_path.name}:[/dim red] Couldn't check this image"
                     )
 
                 progress.advance(task)
@@ -1110,7 +1109,7 @@ def _run_vision_pipeline(
         img_path = image_files[0]
 
         with Status(
-            f"[bold cyan]Analysing [white]{img_path.name}[/white]…[/bold cyan]",
+            f"[bold cyan]Checking [white]{img_path.name}[/white]…[/bold cyan]",
             spinner="dots",
             console=console,
         ):
@@ -1119,7 +1118,7 @@ def _run_vision_pipeline(
                 results.append((img_path.name, result))
             except Exception as exc:
                 console.print(
-                    f"[bold red]✗[/bold red] Vision analysis failed: {exc}"
+                    f"[bold red]😕[/bold red] Couldn't check this image. Try a different one."
                 )
                 raise typer.Exit(code=1)
 

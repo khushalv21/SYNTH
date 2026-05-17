@@ -2,6 +2,9 @@
 
 Reusable display helpers: banner, result tables, text panels,
 and progress bars. Keeps the main CLI module focused on command logic.
+
+All user-facing strings are written in plain, friendly English so that
+anyone — not just developers — can understand the output.
 """
 
 from __future__ import annotations
@@ -28,7 +31,7 @@ BANNER = r"""
 [bold cyan]  ╚════██║  ╚██╔╝  ██║╚██╗██║   ██║   ██╔══██║[/bold cyan]
 [bold cyan]  ███████║   ██║   ██║ ╚████║   ██║   ██║  ██║[/bold cyan]
 [bold cyan]  ╚══════╝   ╚═╝   ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝[/bold cyan]
-[dim]  AI Content Authenticator & OCR Engine[/dim]
+[dim]  Check if text or images were made by AI[/dim]
 """
 
 
@@ -37,7 +40,15 @@ def print_banner() -> None:
     console.print(BANNER)
 
 
-# ── Verdict colours ───────────────────────────────────────────────────────────
+# ── Verdict helpers (plain English + emoji) ───────────────────────────────────
+
+_VERDICT_LABELS: dict[str, str] = {
+    "human": "✅ Written by a human",
+    "ai":    "🤖 Likely AI-generated",
+    "mixed": "⚠️  Possibly AI-assisted",
+    "real":  "✅ Real photo",
+    "fake":  "🤖 Likely AI-generated",
+}
 
 _VERDICT_STYLES: dict[str, str] = {
     "human": "bold green",
@@ -49,15 +60,40 @@ _VERDICT_STYLES: dict[str, str] = {
 
 
 def _verdict_styled(verdict: str) -> str:
-    """Return a Rich-markup-wrapped verdict string."""
+    """Return a Rich-markup-wrapped verdict in plain English."""
     style = _VERDICT_STYLES.get(verdict, "bold white")
-    tag = verdict.upper()
-    return f"[{style}]{tag}[/{style}]"
+    label = _VERDICT_LABELS.get(verdict, verdict.upper())
+    return f"[{style}]{label}[/{style}]"
+
+
+def _verdict_short(verdict: str) -> str:
+    """Short emoji-only verdict for table rows."""
+    short_map = {
+        "human": "[bold green]✅ Human[/bold green]",
+        "ai": "[bold red]🤖 AI[/bold red]",
+        "mixed": "[bold yellow]⚠️  Mixed[/bold yellow]",
+        "real": "[bold green]✅ Real[/bold green]",
+        "fake": "[bold red]🤖 AI[/bold red]",
+    }
+    return short_map.get(verdict, verdict)
+
+
+def _confidence_label(score: float) -> str:
+    """Convert a raw 0.0–1.0 score into a human-readable confidence level."""
+    if score >= 0.90:
+        return "[bold red]Very High[/bold red]"
+    if score >= 0.75:
+        return "[red]High[/red]"
+    if score >= 0.50:
+        return "[yellow]Moderate[/yellow]"
+    if score >= 0.30:
+        return "[yellow]Low[/yellow]"
+    return "[green]Very Low[/green]"
 
 
 def _score_styled(score: float) -> str:
-    """Return colour-coded score: green ≤0.3, yellow 0.3–0.7, red ≥0.7."""
-    pct = f"{score * 100:.1f}%"
+    """Return colour-coded percentage: green ≤0.3, yellow 0.3–0.7, red ≥0.7."""
+    pct = f"{score * 100:.0f}%"
     if score <= 0.3:
         return f"[green]{pct}[/green]"
     if score <= 0.7:
@@ -71,7 +107,7 @@ def _score_styled(score: float) -> str:
 def build_results_table(
     results: list[tuple[str, AuthResult]],
 ) -> Table:
-    """Build a Rich table summarising verification results.
+    """Build a Rich table summarising scan results.
 
     Args:
         results: List of ``(filename, AuthResult)`` tuples.
@@ -80,7 +116,7 @@ def build_results_table(
         A styled :class:`rich.table.Table`.
     """
     table = Table(
-        title="[bold]Verification Results[/bold]",
+        title="[bold]📋 Scan Results[/bold]",
         title_style="cyan",
         border_style="dim cyan",
         header_style="bold white",
@@ -90,17 +126,15 @@ def build_results_table(
     )
     table.add_column("#", style="dim", width=4, justify="right")
     table.add_column("File", style="white", ratio=3)
-    table.add_column("Verdict", justify="center", width=10)
-    table.add_column("AI Score", justify="center", width=10)
-    table.add_column("Model", style="dim", ratio=2)
+    table.add_column("Result", justify="center", width=12)
+    table.add_column("Confidence", justify="center", width=14)
 
     for idx, (filename, result) in enumerate(results, 1):
         table.add_row(
             str(idx),
             filename,
-            _verdict_styled(result.verdict),
-            _score_styled(result.score),
-            result.model,
+            _verdict_short(result.verdict),
+            _confidence_label(result.score),
         )
 
     return table
@@ -154,12 +188,12 @@ def build_text_panel(
             style="bold red underline",
         )
 
-    # Build subtitle
+    # Build subtitle in plain English
     verdict_display = _verdict_styled(result.verdict)
-    score_display = _score_styled(result.score)
-    subtitle = f"Verdict: {verdict_display}  │  AI Score: {score_display}"
+    confidence = _confidence_label(result.score)
+    subtitle = f"{verdict_display}  │  Confidence: {confidence}"
 
-    title = f"[bold cyan]📄 {filename}[/bold cyan]" if filename else "[bold cyan]Text Analysis[/bold cyan]"
+    title = f"[bold cyan]📄 {filename}[/bold cyan]" if filename else "[bold cyan]Extracted Text[/bold cyan]"
 
     return Panel(
         Align.left(rich_text),
@@ -177,26 +211,28 @@ def build_text_panel(
 def build_summary_panel(
     results: list[tuple[str, AuthResult]],
 ) -> Panel:
-    """Build a summary panel with aggregate statistics."""
+    """Build a summary panel with aggregate statistics in plain language."""
     total = len(results)
     ai_count = sum(1 for _, r in results if r.verdict == "ai")
     human_count = sum(1 for _, r in results if r.verdict == "human")
     mixed_count = sum(1 for _, r in results if r.verdict == "mixed")
-    avg_score = sum(r.score for _, r in results) / total if total else 0.0
 
     lines = [
-        f"[bold]Files scanned:[/bold]  {total}",
-        f"[bold green]Human:[/bold green]          {human_count}",
-        f"[bold red]AI-generated:[/bold red]   {ai_count}",
-        f"[bold yellow]Mixed:[/bold yellow]          {mixed_count}",
-        f"[bold]Avg AI score:[/bold]   {_score_styled(avg_score)}",
+        f"  Checked [bold]{total}[/bold] file{'s' if total != 1 else ''}",
+        "",
     ]
+    if human_count:
+        lines.append(f"  [bold green]✅ {human_count}[/bold green] look{'s' if human_count == 1 else ''} human-written")
+    if ai_count:
+        lines.append(f"  [bold red]🤖 {ai_count}[/bold red] look{'s' if ai_count == 1 else ''} AI-generated")
+    if mixed_count:
+        lines.append(f"  [bold yellow]⚠️  {mixed_count}[/bold yellow] could be a mix of human and AI")
 
     return Panel(
         "\n".join(lines),
-        title="[bold cyan]📊 Batch Summary[/bold cyan]",
+        title="[bold cyan]📊 Summary[/bold cyan]",
         border_style="cyan",
-        padding=(1, 2),
+        padding=(1, 1),
     )
 
 
@@ -208,13 +244,9 @@ def build_summary_panel(
 def build_vision_results_table(
     results: list[tuple[str, VisionAuthResult]],
 ) -> Table:
-    """Build a Rich table for AI image detection results.
-
-    Displays 'AI Image Probability' and 'Real / Fake' verdict instead
-    of text-centric metrics like burstiness.
-    """
+    """Build a Rich table for AI image detection results."""
     table = Table(
-        title="[bold]🔍 Image Forensics Results[/bold]",
+        title="[bold]🖼️  Image Scan Results[/bold]",
         title_style="cyan",
         border_style="dim cyan",
         header_style="bold white",
@@ -224,17 +256,15 @@ def build_vision_results_table(
     )
     table.add_column("#", style="dim", width=4, justify="right")
     table.add_column("File", style="white", ratio=3)
-    table.add_column("Verdict", justify="center", width=10)
-    table.add_column("AI Image Prob.", justify="center", width=16)
-    table.add_column("Model", style="dim", ratio=2)
+    table.add_column("Result", justify="center", width=12)
+    table.add_column("Confidence", justify="center", width=14)
 
     for idx, (filename, result) in enumerate(results, 1):
         table.add_row(
             str(idx),
             filename,
-            _verdict_styled(result.verdict),
-            _score_styled(result.ai_probability),
-            result.model,
+            _verdict_short(result.verdict),
+            _confidence_label(result.ai_probability),
         )
 
     return table
@@ -247,22 +277,21 @@ def build_vision_summary_panel(
     total = len(results)
     real_count = sum(1 for _, r in results if r.verdict == "real")
     fake_count = sum(1 for _, r in results if r.verdict == "fake")
-    avg_prob = (
-        sum(r.ai_probability for _, r in results) / total if total else 0.0
-    )
 
     lines = [
-        f"[bold]Images scanned:[/bold]     {total}",
-        f"[bold green]Real (authentic):[/bold green]  {real_count}",
-        f"[bold red]Fake (AI-generated):[/bold red] {fake_count}",
-        f"[bold]Avg AI probability:[/bold] {_score_styled(avg_prob)}",
+        f"  Checked [bold]{total}[/bold] image{'s' if total != 1 else ''}",
+        "",
     ]
+    if real_count:
+        lines.append(f"  [bold green]✅ {real_count}[/bold green] look{'s' if real_count == 1 else ''} like real photo{'s' if real_count != 1 else ''}")
+    if fake_count:
+        lines.append(f"  [bold red]🤖 {fake_count}[/bold red] look{'s' if fake_count == 1 else ''} AI-generated")
 
     return Panel(
         "\n".join(lines),
-        title="[bold cyan]📊 Image Forensics Summary[/bold cyan]",
+        title="[bold cyan]📊 Image Summary[/bold cyan]",
         border_style="cyan",
-        padding=(1, 2),
+        padding=(1, 1),
     )
 
 
@@ -286,7 +315,7 @@ def build_ensemble_results_table(
 
     assert isinstance(result, EnsembleResult)
 
-    title = f"[bold]🔬 Ensemble Analysis — {filename}[/bold]" if filename else "[bold]🔬 Ensemble Analysis[/bold]"
+    title = f"[bold]🔬 Deep Scan — {filename}[/bold]" if filename else "[bold]🔬 Deep Scan[/bold]"
     table = Table(
         title=title,
         title_style="cyan",
@@ -297,19 +326,17 @@ def build_ensemble_results_table(
         padding=(0, 1),
     )
     table.add_column("#", style="dim", width=4, justify="right")
-    table.add_column("Detector", style="white", ratio=2)
-    table.add_column("Verdict", justify="center", width=10)
-    table.add_column("AI Score", justify="center", width=10)
-    table.add_column("Weight", justify="center", width=8)
-    table.add_column("Latency", justify="right", width=10, style="dim")
+    table.add_column("Scanner", style="white", ratio=2)
+    table.add_column("Result", justify="center", width=12)
+    table.add_column("Confidence", justify="center", width=14)
+    table.add_column("Speed", justify="right", width=10, style="dim")
 
     for idx, vote in enumerate(result.individual_votes, 1):
         table.add_row(
             str(idx),
             vote.detector_name,
-            _verdict_styled(vote.verdict),
-            _score_styled(vote.score),
-            f"{vote.weight:.1f}",
+            _verdict_short(vote.verdict),
+            _confidence_label(vote.score),
             f"{vote.latency_ms:.0f}ms",
         )
 
@@ -317,10 +344,9 @@ def build_ensemble_results_table(
     table.add_section()
     table.add_row(
         "",
-        "[bold cyan]CONSENSUS[/bold cyan]",
-        _verdict_styled(result.consensus_verdict),
-        _score_styled(result.consensus_score),
-        "",
+        "[bold cyan]OVERALL[/bold cyan]",
+        _verdict_short(result.consensus_verdict),
+        _confidence_label(result.consensus_score),
         "",
     )
 
@@ -334,7 +360,7 @@ def build_ensemble_summary_panel(
 ) -> Panel:
     """Build a summary panel for an ensemble result.
 
-    Shows consensus score, agreement ratio, and disagreement warnings.
+    Shows consensus, agreement level, and a warning if scanners disagree.
     """
     from synth.core.ensemble import EnsembleResult
 
@@ -343,35 +369,37 @@ def build_ensemble_summary_panel(
     agreement_pct = result.agreement_ratio * 100
     if agreement_pct >= 80:
         agreement_style = "green"
+        agreement_word = "Strong"
     elif agreement_pct >= 60:
         agreement_style = "yellow"
+        agreement_word = "Moderate"
     else:
         agreement_style = "red"
+        agreement_word = "Weak"
 
     lines = [
-        f"[bold]Consensus:[/bold]         {_verdict_styled(result.consensus_verdict)}",
-        f"[bold]AI Score:[/bold]          {_score_styled(result.consensus_score)}",
-        f"[bold]Agreement:[/bold]         [{agreement_style}]{agreement_pct:.0f}%[/{agreement_style}]",
-        f"[bold]Detectors used:[/bold]    {len(result.individual_votes)}",
-        f"[bold]Domain:[/bold]            {result.domain}",
+        f"  [bold]Result:[/bold]      {_verdict_styled(result.consensus_verdict)}",
+        f"  [bold]Confidence:[/bold]  {_confidence_label(result.consensus_score)}",
+        f"  [bold]Agreement:[/bold]   [{agreement_style}]{agreement_word} ({agreement_pct:.0f}%)[/{agreement_style}]",
+        f"  [bold]Scanners:[/bold]    {len(result.individual_votes)} used",
     ]
 
     if result.disagreement_warning:
         lines.append("")
-        lines.append("[bold red]⚠ Significant detector disagreement detected[/bold red]")
-        lines.append("[dim]Results may be less reliable — consider manual review[/dim]")
+        lines.append("  [bold yellow]⚠️  The scanners disagree on this one.[/bold yellow]")
+        lines.append("  [dim]You may want to check this yourself to be sure.[/dim]")
 
     title = (
-        f"[bold cyan]📊 Ensemble Summary — {filename}[/bold cyan]"
+        f"[bold cyan]📊 Summary — {filename}[/bold cyan]"
         if filename
-        else "[bold cyan]📊 Ensemble Summary[/bold cyan]"
+        else "[bold cyan]📊 Summary[/bold cyan]"
     )
 
     return Panel(
         "\n".join(lines),
         title=title,
         border_style="cyan",
-        padding=(1, 2),
+        padding=(1, 1),
     )
 
 
@@ -383,7 +411,7 @@ def build_models_table() -> Table:
     from synth.core.registry import DetectorRegistry
 
     table = Table(
-        title="[bold]🧠 Registered Detectors[/bold]",
+        title="[bold]🧠 Available Scanners[/bold]",
         title_style="cyan",
         border_style="dim cyan",
         header_style="bold white",
@@ -391,8 +419,8 @@ def build_models_table() -> Table:
         padding=(0, 1),
     )
     table.add_column("Name", style="cyan", ratio=2)
-    table.add_column("Domain", justify="center", width=10)
-    table.add_column("Speed Tier", justify="center", width=12)
+    table.add_column("Type", justify="center", width=10)
+    table.add_column("Speed", justify="center", width=12)
     table.add_column("GPU?", justify="center", width=6)
     table.add_column("Size", justify="right", width=8)
     table.add_column("Description", style="dim", ratio=3)
@@ -427,42 +455,46 @@ def build_models_table() -> Table:
 
 
 def build_dashboard() -> Panel:
-    """Build the system dashboard shown when the user runs bare ``synth``.
+    """Build a welcoming dashboard when the user runs bare ``synth``.
 
-    Displays the ASCII banner, version, device info, strategies, and
-    PyTorch/CUDA/MPS availability in a single styled panel.
+    Focused on what the tool does and how to use it — no developer
+    internals like PyTorch versions or CUDA/MPS status.
     """
-    import sys
-
     from synth import __version__
-    from synth.core.auth import DetectorFactory
     from synth.core.device import detect_device
 
     device = detect_device()
+    device_label = {
+        "cuda": "🚀 GPU (NVIDIA CUDA)",
+        "mps": "⚡ Apple Silicon (Metal)",
+        "cpu": "💻 CPU",
+    }.get(device, f"💻 {device}")
 
-    info_lines = [
-        f"[bold]Version:[/bold]       {__version__}",
-        f"[bold]Python:[/bold]        {sys.version.split()[0]}",
-        f"[bold]Compute:[/bold]       [cyan]{device}[/cyan]",
-        f"[bold]Strategies:[/bold]    {', '.join(DetectorFactory.available())}",
-    ]
+    from rich.console import Group
 
-    try:
-        import torch
+    info = (
+        f"  [bold]Version:[/bold]  {__version__}\n"
+        f"  [bold]Speed:[/bold]    {device_label}\n"
+    )
 
-        info_lines.append(f"[bold]PyTorch:[/bold]       {torch.__version__}")
-        info_lines.append(
-            f"[bold]CUDA:[/bold]          {'[green]✓ ' + torch.cuda.get_device_name(0) + '[/green]' if torch.cuda.is_available() else '[red]✗ not available[/red]'}"
-        )
-        info_lines.append(
-            f"[bold]MPS:[/bold]           {'[green]✓ available[/green]' if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available() else '[red]✗ not available[/red]'}"
-        )
-    except ImportError:
-        pass
+    how_to = (
+        "[bold]How to use:[/bold]\n"
+        "\n"
+        "  [cyan]synth[/cyan] [dim]photo.png[/dim]       Check if an image is AI-generated\n"
+        "  [cyan]synth[/cyan] [dim]essay.pdf[/dim]       Check if text in a PDF was written by AI\n"
+        "  [cyan]synth[/cyan] [dim]./folder/[/dim]       Check all files in a folder\n"
+        "  [cyan]synth[/cyan] [dim]help[/dim]            Show all options\n"
+    )
+
+    group = Group(
+        info,
+        "",
+        how_to,
+    )
 
     return Panel(
-        "\n".join(info_lines),
-        title="[bold cyan]System Info[/bold cyan]",
+        group,
+        title="[bold cyan]Welcome to Synth[/bold cyan]",
         border_style="cyan",
         padding=(1, 2),
     )
@@ -474,11 +506,20 @@ def build_dashboard() -> Panel:
 
 
 def build_help_menu() -> Panel:
-    """Build a custom Rich help menu for ``synth help``.
+    """Build a friendly help menu for ``synth help``.
 
-    Returns a styled panel with commands, options, examples, and
-    supported file formats.
+    Focused on the essentials — what to do, not developer internals.
     """
+    from rich.console import Group
+
+    # ── What is Synth? ────────────────────────────────────────────────────
+    intro = (
+        "[bold]What is Synth?[/bold]\n"
+        "\n"
+        "  Synth checks whether text or images were created by AI.\n"
+        "  Just point it at a file and it'll tell you what it finds.\n"
+    )
+
     # ── Commands table ────────────────────────────────────────────────────
     cmd_table = Table(
         show_header=True,
@@ -487,15 +528,15 @@ def build_help_menu() -> Panel:
         padding=(0, 2),
         expand=True,
     )
-    cmd_table.add_column("Command", style="cyan", ratio=2)
-    cmd_table.add_column("Description", style="white", ratio=3)
-    cmd_table.add_row("synth", "System dashboard & info")
-    cmd_table.add_row("synth [dim]<file>[/dim]", "Auto-analyse a file")
-    cmd_table.add_row("synth [dim]<folder>/[/dim]", "Batch-analyse a directory")
-    cmd_table.add_row("synth help", "Show this menu")
-    cmd_table.add_row("synth -V", "Show version")
+    cmd_table.add_column("What to type", style="cyan", ratio=2)
+    cmd_table.add_column("What it does", style="white", ratio=3)
+    cmd_table.add_row("synth [dim]photo.png[/dim]", "Check a single file")
+    cmd_table.add_row("synth [dim]./folder/[/dim]", "Check all files in a folder")
+    cmd_table.add_row("synth", "Show the welcome screen")
+    cmd_table.add_row("synth help", "Show this help page")
+    cmd_table.add_row("synth -V", "Show the version number")
 
-    # ── Options table ─────────────────────────────────────────────────────
+    # ── Extra options ─────────────────────────────────────────────────────
     opt_table = Table(
         show_header=True,
         header_style="bold white",
@@ -504,50 +545,44 @@ def build_help_menu() -> Panel:
         expand=True,
     )
     opt_table.add_column("Option", style="cyan", ratio=2)
-    opt_table.add_column("Description", style="white", ratio=3)
-    opt_table.add_row("--engine [dim]local|api[/dim]", "Detection backend")
-    opt_table.add_row("--agent [dim]<model>[/dim]", "Model name override")
-    opt_table.add_row("--lang [dim]en,fr,...[/dim]", "OCR language codes")
-    opt_table.add_row("--no-text", "Hide extracted text panel")
-    opt_table.add_row("--verbose", "Enable debug output")
+    opt_table.add_column("What it does", style="white", ratio=3)
+    opt_table.add_row("--no-text", "Don't show the extracted text")
+    opt_table.add_row("--lang [dim]en,fr,...[/dim]", "Set languages for text reading")
+    opt_table.add_row("--verbose", "Show detailed technical output")
+    opt_table.add_row("--profile [dim]fast|balanced|forensic[/dim]", "How thorough to scan")
 
     # ── Examples ──────────────────────────────────────────────────────────
     examples = (
-        "[dim]$[/dim] [cyan]synth[/cyan] photo.png\n"
-        "[dim]$[/dim] [cyan]synth[/cyan] report.pdf\n"
-        "[dim]$[/dim] [cyan]synth[/cyan] ./documents/\n"
-        "[dim]$[/dim] [cyan]synth[/cyan] image.jpg --engine api\n"
-        "[dim]$[/dim] [cyan]synth[/cyan] scan.jpg --lang en,fr"
+        "[dim]$[/dim] [cyan]synth[/cyan] screenshot.png\n"
+        "[dim]$[/dim] [cyan]synth[/cyan] homework.pdf\n"
+        "[dim]$[/dim] [cyan]synth[/cyan] ./suspicious-folder/"
     )
 
     # ── Supported formats ─────────────────────────────────────────────────
     formats = (
-        "[cyan]Images:[/cyan]  png  jpg  jpeg  webp  tiff  tif  bmp\n"
-        "[cyan]Docs:[/cyan]    pdf"
+        "[cyan]Images:[/cyan]  PNG  JPG  JPEG  WEBP  TIFF  BMP\n"
+        "[cyan]Docs:[/cyan]    PDF"
     )
 
-    # ── Assemble ──────────────────────────────────────────────────────────
-    from rich.console import Group
-
     group = Group(
+        intro,
         "[bold]Commands[/bold]\n",
         cmd_table,
         "",
-        "[bold]Options[/bold]\n",
+        "[bold]Extra Options[/bold] [dim](for advanced users)[/dim]\n",
         opt_table,
         "",
         "[bold]Examples[/bold]\n",
         examples,
         "",
-        "[bold]Supported Formats[/bold]\n",
+        "[bold]Supported File Types[/bold]\n",
         formats,
     )
 
     return Panel(
         group,
-        title="[bold cyan]SYNTH COMMAND MENU[/bold cyan]",
+        title="[bold cyan]SYNTH HELP[/bold cyan]",
         border_style="cyan",
         padding=(1, 2),
         expand=True,
     )
-
