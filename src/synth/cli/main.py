@@ -19,6 +19,16 @@ from __future__ import annotations
 # transformers/torch/easyocr are imported transitively via auth.py.
 import os as _os
 
+# ── Fix macOS SSL certificate verification ────────────────────────────────────
+# macOS Python often lacks proper root certificates. Set SSL_CERT_FILE
+# from certifi so EasyOCR/HuggingFace model downloads work out of the box.
+try:
+    import certifi as _certifi
+    _os.environ.setdefault("SSL_CERT_FILE", _certifi.where())
+    _os.environ.setdefault("REQUESTS_CA_BUNDLE", _certifi.where())
+except ImportError:
+    pass
+
 _os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 _os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 _os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
