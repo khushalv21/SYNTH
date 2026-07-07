@@ -45,9 +45,18 @@ Instead of relying on just one check, Synth uses a team of specialized AI models
 
 ## Installation
 
-Getting started is simple. You just need Python (3.10 or newer) and `git` installed on your computer. 
+Getting started is simple. You can install **Synth** directly from PyPI.
 
-Open your terminal and run:
+> [!NOTE]
+> Since the name `synth` was already taken on PyPI, the package is published under the name **`synth-authenticator`**.
+
+Run the following command to install using `pip`:
+
+```bash
+pip install synth-authenticator
+```
+
+Alternatively, you can install it from source:
 
 ```bash
 git clone https://github.com/khushalv21/SYNTH.git
@@ -56,6 +65,7 @@ pip install .
 ```
 
 *Note: Synth will automatically detect your system's hardware to run as fast as possible. The first time you run it, it will download the necessary AI models.*
+
 
 ---
 

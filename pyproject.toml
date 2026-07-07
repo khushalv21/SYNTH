@@ -3,7 +3,7 @@ requires = ["setuptools>=70.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "synth"
+name = "synth-authenticator"
 version = "2.0.0"
 description = "AI Forensic Engine — multi-detector ensemble for AI-generated text and image authentication."
 readme = "README.md"
