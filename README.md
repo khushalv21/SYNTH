@@ -10,6 +10,7 @@
 <p align="center">
   <a href="https://github.com/khushalv21/SYNTH"><img src="https://img.shields.io/github/stars/khushalv21/SYNTH?style=social" alt="Stars"></a>
   <a href="https://github.com/khushalv21/SYNTH/blob/main/LICENSE"><img src="https://img.shields.io/github/license/khushalv21/SYNTH.svg" alt="License"></a>
+  <a href="https://pypi.org/project/synth-authenticator/"><img src="https://img.shields.io/pypi/v/synth-authenticator.svg" alt="PyPI Version"></a>
   <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
 </p>
 
