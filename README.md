@@ -1,12 +1,3 @@
-```text
-  ███████╗██╗   ██╗███╗   ██╗████████╗██╗  ██╗
-  ██╔════╝╚██╗ ██╔╝████╗  ██║╚══██╔══╝██║  ██║
-  ███████╗ ╚████╔╝ ██╔██╗ ██║   ██║   ███████║
-  ╚════██║  ╚██╔╝  ██║╚██╗██║   ██║   ██╔══██║
-  ███████║   ██║   ██║ ╚████║   ██║   ██║  ██║
-  ╚══════╝   ╚═╝   ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝
-```
-
 <p align="center">
   <a href="https://github.com/khushalv21/SYNTH"><img src="https://img.shields.io/github/stars/khushalv21/SYNTH?style=social" alt="Stars"></a>
   <a href="https://github.com/khushalv21/SYNTH/blob/main/LICENSE"><img src="https://img.shields.io/github/license/khushalv21/SYNTH.svg" alt="License"></a>
@@ -24,6 +15,10 @@
 <p align="center">
   <strong>Catch AI fakes in seconds.</strong><br>
   <em>Synth is a tool that tells you if an image or document was created by an AI or a human.</em>
+</p>
+
+<p align="center">
+  <img src="docs/assets/terminal-snapshot.png" alt="Synth CLI running in a terminal" width="600">
 </p>
 
 ---
