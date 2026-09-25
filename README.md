@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="docs/assets/terminal-snapshot.png" alt="Synth CLI running in a terminal" width="600">
-</p>
-
-<p align="center">
   <a href="https://github.com/khushalv21/SYNTH"><img src="https://img.shields.io/github/stars/khushalv21/SYNTH?style=social" alt="Stars"></a>
   <a href="https://github.com/khushalv21/SYNTH/blob/main/LICENSE"><img src="https://img.shields.io/github/license/khushalv21/SYNTH.svg" alt="License"></a>
   <a href="https://pypi.org/project/synth-authenticator/"><img src="https://img.shields.io/pypi/v/synth-authenticator.svg" alt="PyPI Version"></a>
